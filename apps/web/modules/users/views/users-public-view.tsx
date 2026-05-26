@@ -1,4 +1,4 @@
-"use client";
+use client";
 
 import {
   sdkActionManager,
@@ -6,9 +6,9 @@ import {
   useEmbedStyles,
   useIsEmbed,
 } from "@calcom/embed-core/embed-iframe";
+import EmptyPage from "@calcom/features/eventtypes/components/EmptyPage";
 import { useRouterQuery } from "@calcom/lib/hooks/useRouterQuery";
 import useTheme from "@calcom/lib/hooks/useTheme";
-import { UserAvatar } from "@calcom/ui/components/avatar";
 import { Icon } from "@calcom/ui/components/icon";
 import { OrgBanner } from "@calcom/ui/components/organization-banner";
 import { UnpublishedEntity } from "@calcom/ui/components/unpublished-entity";
@@ -61,13 +61,30 @@ export function UserPage(props: PageProps) {
             isEmbed ? "border-booker border-booker-width  bg-default rounded-md" : "",
             "max-w-3xl px-4 py-12"
           )}>
-          <div className="border-subtle bg-default text-default mb-8 overflow-hidden rounded-xl border">
-            {isOrg && user.profile.organization?.bannerUrl && (
-              <OrgBanner
-                alt={user.profile.organization.name ?? "Organization banner"}
-                imageSrc={user.profile.organization.bannerUrl}
-                className="p-1 border border-subtle rounded-xl w-full object-cover"
-              />
+          <div className="border-subtle bg-default text-default mb-8 rounded-xl border p-4">
+            <h1 className="font-cal text-emphasis mb-1 mt-1 text-xl" data-testid="name-title">
+              {profile.name}
+              {!isOrg && user.verified && (
+                <Icon
+                  name="badge-check"
+                  className="mx-1 -mt-1 inline h-6 w-6 fill-blue-500 text-white dark:text-black"
+                />
+              )}
+              {isOrg && (
+                <Icon
+                  name="badge-check"
+                  className="mx-1 -mt-1 inline h-6 w-6 fill-yellow-500 text-white dark:text-black"
+                />
+              )}
+            </h1>
+            {!isBioEmpty && (
+              <>
+                <div
+                  className="text-default break-words text-sm [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-600"
+                   
+                  dangerouslySetInnerHTML={{ __html: props.safeBio }}
+                />
+              </>
             )}
             <div className="p-4">
               <UserAvatar
@@ -141,7 +158,6 @@ export function UserPage(props: PageProps) {
                   <div className="flex flex-wrap items-center">
                     <h2 className="text-default pr-2 text-sm font-semibold">{type.title}</h2>
                   </div>
-                  <EventTypeDescription eventType={type} isPublic={true} shortenDescription />
                 </div>
               </Link>
             ))}

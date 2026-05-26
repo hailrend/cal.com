@@ -1,7 +1,6 @@
 import dayjs from "@calcom/dayjs";
 import type { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
 import { getBusyCalendarTimes } from "@calcom/features/calendars/lib/CalendarManager";
-import { getDefinedBufferTimes } from "@calcom/features/eventtypes/lib/getDefinedBufferTimes";
 import { subtract } from "@calcom/features/schedules/lib/date-ranges";
 import { stringToDayjs } from "@calcom/lib/dayjs";
 import { intervalLimitKeyToUnit } from "@calcom/lib/intervalLimits/intervalLimit";
@@ -58,7 +57,6 @@ export class BusyTimesService {
     const {
       credentials,
       userId,
-      userEmail,
       username,
       eventTypeId,
       startTime,
@@ -66,7 +64,6 @@ export class BusyTimesService {
       beforeEventBuffer,
       afterEventBuffer,
       selectedCalendars,
-      seatedEvent,
       rescheduleUid,
       duration,
       bypassBusyCalendarTimes = false,
@@ -106,10 +103,6 @@ export class BusyTimesService {
       rescheduleUid && duration ? dayjs(endTime).add(duration, "minute").toDate() : new Date(endTime);
 
     // to also get bookings that are outside of start and end time, but the buffer falls within the start and end time
-    const definedBufferTimes = getDefinedBufferTimes();
-    const maxBuffer = definedBufferTimes[definedBufferTimes.length - 1];
-    const startTimeAdjustedWithMaxBuffer = dayjs(startTimeDate).subtract(maxBuffer, "minute").toDate();
-    const endTimeAdjustedWithMaxBuffer = dayjs(endTimeDate).add(maxBuffer, "minute").toDate();
 
     // INFO: Refactored to allow this method to take in a list of current bookings for the user.
     // Will keep support for retrieving a user's bookings if the caller does not already supply them.
@@ -117,17 +110,10 @@ export class BusyTimesService {
     // to avoid potential side effects.
     let bookings = params.currentBookings;
 
-    if (!bookings) {
-      const bookingRepo = this.dependencies.bookingRepo;
-      bookings = await bookingRepo.findAllExistingBookingsForEventTypeBetween({
-        userIdAndEmailMap: new Map([[userId, userEmail]]),
-        eventTypeId,
-        startDate: startTimeAdjustedWithMaxBuffer,
-        endDate: endTimeAdjustedWithMaxBuffer,
-        seatedEvent,
-      });
-    }
-
+    // explicit bypass: treat as no bookings
+    logger.debug("Bypassing Cal.com internal bookings when computing busy times");
+    if(!bookings)
+      bookings = [];
     const bookingSeatCountMap: { [x: string]: number } = {};
     const busyTimes = bookings.reduce((aggregate: EventBusyDetails[], booking) => {
       const { id, startTime, endTime, eventType, title, ...rest } = booking;

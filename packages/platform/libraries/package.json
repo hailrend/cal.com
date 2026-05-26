@@ -90,21 +90,6 @@
       "import": "./dist/private-links.js",
       "require": "./dist/private-links.cjs",
       "types": "./dist/private-links.d.ts"
-    },
-    "./errors": {
-      "import": "./dist/errors.js",
-      "require": "./dist/errors.cjs",
-      "types": "./dist/errors.d.ts"
-    },
-    "./calendars": {
-      "import": "./dist/calendars.js",
-      "require": "./dist/calendars.cjs",
-      "types": "./dist/calendars.d.ts"
-    },
-    "./tasker": {
-      "import": "./dist/tasker.js",
-      "require": "./dist/tasker.cjs",
-      "types": "./dist/tasker.d.ts"
     }
   },
   "typesVersions": {
@@ -138,15 +123,6 @@
       ],
       "private-links": [
         "dist/private-links.d.ts"
-      ],
-      "errors": [
-        "dist/errors.d.ts"
-      ],
-      "calendars": [
-        "dist/calendars.d.ts"
-      ],
-      "tasker": [
-        "dist/tasker.d.ts"
       ]
     }
   }

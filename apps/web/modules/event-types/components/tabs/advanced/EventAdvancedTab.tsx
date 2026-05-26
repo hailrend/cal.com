@@ -17,7 +17,6 @@ import type {
 } from "@calcom/features/eventtypes/lib/types";
 import {
   DEFAULT_DARK_BRAND_COLOR,
-  DEFAULT_LIGHT_BRAND_COLOR,
   MAX_SEATS_PER_TIME_SLOT,
 } from "@calcom/lib/constants";
 import { generateHashedLink } from "@calcom/lib/generateHashedLink";
