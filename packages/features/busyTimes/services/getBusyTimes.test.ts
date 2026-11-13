@@ -77,7 +77,7 @@ const mockBookings = ({
 ];
 
 describe("getBusyTimes", () => {
-  it("blocks a regular time slot", async () => {
+  it("does not block a slot for a supplied Cal.com booking", async () => {
     const busyTimesService = getBusyTimesService();
     const busyTimes = await busyTimesService.getBusyTimes({
       credentials: [],
@@ -90,44 +90,10 @@ describe("getBusyTimes", () => {
       endTime: startOfTomorrow.endOf("day").format(),
       currentBookings: mockBookings({}),
     });
-    expect(busyTimes).toEqual([
-      expect.objectContaining({
-        start: dayjs(`${tomorrowDate}`).startOf("day").set("hour", 10).toDate(),
-        end: dayjs(`${tomorrowDate}`).startOf("day").set("hour", 11).toDate(),
-        source: "eventType-1-booking-1",
-        title: "Booking Between X and Y",
-      }),
-      expect.objectContaining({
-        start: dayjs(`${tomorrowDate}`).startOf("day").set("hour", 14).toDate(),
-        end: dayjs(`${tomorrowDate}`).startOf("day").set("hour", 15).toDate(),
-        source: "eventType-1-booking-2",
-        title: "Booking Between X and Y",
-      }),
-    ]);
+    // Fork behaviour: Cal.com internal bookings never count as busy, even when the caller supplies them.
+    expect(busyTimes).toEqual([]);
   });
-  it("should block before and after buffer times", async () => {
-    const busyTimesService = getBusyTimesService();
-    const busyTimes = await busyTimesService.getBusyTimes({
-      credentials: [],
-      userId: 1,
-      userEmail: "exampleuser1@example.com",
-      username: "exampleuser1",
-      bypassBusyCalendarTimes: false,
-      selectedCalendars: [],
-      startTime: startOfTomorrow.format(),
-      endTime: startOfTomorrow.endOf("day").format(),
-      currentBookings: [mockBookings({ beforeEventBuffer: 10 })[0]],
-    });
-    expect(busyTimes).toEqual([
-      expect.objectContaining({
-        start: dayjs(`${tomorrowDate}`).startOf("day").set("hour", 9).set("minute", 50).toDate(),
-        end: dayjs(`${tomorrowDate}`).startOf("day").set("hour", 11).toDate(),
-        source: "eventType-1-booking-1",
-        title: "Booking Between X and Y",
-      }),
-    ]);
-  });
-  it("should have busy times only if seated with remaining seats when buffers exist", async () => {
+  it("should ignore supplied bookings with buffers and seats", async () => {
     const busyTimesService = getBusyTimesService();
     const busyTimes = await busyTimesService.getBusyTimes({
       credentials: [],
@@ -139,14 +105,12 @@ describe("getBusyTimes", () => {
       selectedCalendars: [],
       startTime: startOfTomorrow.format(),
       endTime: startOfTomorrow.endOf("day").format(),
-      currentBookings: [mockBookings({ beforeEventBuffer: 10, seatsPerTimeSlot: 10 })[0]],
+      currentBookings: [
+        mockBookings({ beforeEventBuffer: 10 })[0],
+        mockBookings({ beforeEventBuffer: 10, seatsPerTimeSlot: 10 })[0],
+      ],
     });
-    expect(busyTimes).toEqual([
-      expect.objectContaining({
-        start: dayjs(`${tomorrowDate}`).startOf("day").set("hour", 9).set("minute", 50).toDate(),
-        end: dayjs(`${tomorrowDate}`).startOf("day").set("hour", 10).toDate(),
-      }),
-    ]);
+    expect(busyTimes).toEqual([]);
   });
 });
 

@@ -1,25 +1,21 @@
 import CalendarManagerMock from "@calcom/features/calendars/lib/__mocks__/CalendarManager";
 import { constantsScenarios } from "@calcom/lib/__mocks__/constants";
-
 import {
+  createBookingScenario,
+  createCredentials,
+  createOrganization,
   getDate,
   getGoogleCalendarCredential,
-  createBookingScenario,
-  createOrganization,
   getOrganizer,
   getScenarioData,
-  Timezones,
-  TestData,
-  createCredentials,
   mockCrmApp,
+  TestData,
+  Timezones,
 } from "@calcom/testing/lib/bookingScenario/bookingScenario";
-
-import { describe, vi, test } from "vitest";
-
 import dayjs from "@calcom/dayjs";
 import { getAvailableSlotsService } from "@calcom/features/di/containers/AvailableSlots";
-import { SchedulingType, type BookingStatus } from "@calcom/prisma/enums";
-
+import { type BookingStatus, SchedulingType } from "@calcom/prisma/enums";
+import { describe, test, vi } from "vitest";
 import { expect, expectedSlotsForSchedule } from "./getSchedule/expects";
 import { setupAndTeardown } from "./getSchedule/setupAndTeardown";
 import { timeTravelToTheBeginningOfToday } from "./getSchedule/utils";
@@ -1082,18 +1078,18 @@ describe("getSchedule", () => {
 
       expect(scheduleForDayWithOneBooking).toHaveTimeSlots(
         [
-          // "04:00:00.000Z", - This slot is unavailable because of the booking from 4:00 to 4:15
-          `04:15:00.000Z`,
-          `05:00:00.000Z`,
-          `05:45:00.000Z`,
-          `06:30:00.000Z`,
-          `07:15:00.000Z`,
-          `08:00:00.000Z`,
-          `08:45:00.000Z`,
-          `09:30:00.000Z`,
-          `10:15:00.000Z`,
-          `11:00:00.000Z`,
-          `11:45:00.000Z`,
+          // Fork behaviour: Cal.com bookings never block slots, only connected calendars do.
+          "04:00:00.000Z",
+          "04:45:00.000Z",
+          "05:30:00.000Z",
+          "06:15:00.000Z",
+          "07:00:00.000Z",
+          "07:45:00.000Z",
+          "08:30:00.000Z",
+          "09:15:00.000Z",
+          "10:00:00.000Z",
+          "10:45:00.000Z",
+          "11:30:00.000Z",
         ],
         {
           dateString: plus3DateString,
@@ -1412,9 +1408,11 @@ describe("getSchedule", () => {
 
       expect(scheduleForEventOnADayWithCalBooking).toHaveTimeSlots(
         [
-          // `05:30:00.000Z`, // - 5:30 AM is not available because of afterBuffer(120 mins) of the existing booking(4:00-5:59AM slot)
-          // `08:30:00.000Z`, // - 8:30 AM is not available because of beforeBuffer(120mins) of possible booking at 08:30
-          `10:30:00.000Z`,
+          // Fork behaviour: Cal.com bookings never block slots, only connected calendars do.
+          "04:30:00.000Z",
+          "06:30:00.000Z",
+          "08:30:00.000Z",
+          "10:30:00.000Z",
         ],
         {
           dateString: plus2DateString,
@@ -1613,18 +1611,19 @@ describe("getSchedule", () => {
 
       expect(thisUserAvailability).toHaveTimeSlots(
         [
-          // `04:00:00.000Z`, // <- This slot should be occupied by the Collective Event
-          `04:15:00.000Z`,
-          `05:00:00.000Z`,
-          `05:45:00.000Z`,
-          `06:30:00.000Z`,
-          `07:15:00.000Z`,
-          `08:00:00.000Z`,
-          `08:45:00.000Z`,
-          `09:30:00.000Z`,
-          `10:15:00.000Z`,
-          `11:00:00.000Z`,
-          `11:45:00.000Z`,
+          // Fork behaviour: Cal.com bookings never block slots, only connected calendars do.
+          "04:00:00.000Z",
+          "04:45:00.000Z",
+          "05:30:00.000Z",
+          "06:15:00.000Z",
+          "07:00:00.000Z",
+          "07:45:00.000Z",
+          "08:30:00.000Z",
+          "09:15:00.000Z",
+          "10:00:00.000Z",
+          "10:45:00.000Z",
+          "11:30:00.000Z",
+          "12:15:00.000Z",
         ],
         {
           dateString: plus2DateString,
@@ -1755,7 +1754,8 @@ describe("getSchedule", () => {
             availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
           });
       }
-      expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(23); // 2 booking per day as limit, only one booking on that
+      // Fork behaviour: the existing Cal.com booking does not block its own slot, and the limit is not reached.
+      expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(24);
     });
 
     test("test that duration limit is working correctly if user is all day available", async () => {
@@ -2681,7 +2681,9 @@ describe("getSchedule", () => {
           });
       }
 
-      expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(23);
+      // Fork behaviour: the existing Cal.com booking does not block its own slot, and the limit is not reached.
+
+      expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(24);
     });
 
     test("global team booking limit blocks correct slots if attendee and host are in different timezone", async () => {
@@ -2945,18 +2947,19 @@ describe("getSchedule", () => {
 
       expect(thisUserAvailability).toHaveTimeSlots(
         [
-          // `04:00:00.000Z`, // <- This slot should be occupied by the Pending Requires Confirmation booking blocking this slot
-          `04:15:00.000Z`,
-          `05:00:00.000Z`, // <- This slot should be available to book as this event type (id: 3) has requires confirmation without blocking the slot
-          `05:45:00.000Z`,
-          `06:30:00.000Z`,
-          `07:15:00.000Z`,
-          `08:00:00.000Z`,
-          `08:45:00.000Z`,
-          `09:30:00.000Z`,
-          `10:15:00.000Z`,
-          `11:00:00.000Z`,
-          `11:45:00.000Z`,
+          // Fork behaviour: Cal.com bookings never block slots, only connected calendars do.
+          "04:00:00.000Z",
+          "04:45:00.000Z",
+          "05:30:00.000Z",
+          "06:15:00.000Z",
+          "07:00:00.000Z",
+          "07:45:00.000Z",
+          "08:30:00.000Z",
+          "09:15:00.000Z",
+          "10:00:00.000Z",
+          "10:45:00.000Z",
+          "11:30:00.000Z",
+          "12:15:00.000Z",
         ],
         {
           dateString: plus2DateString,
@@ -3149,18 +3152,18 @@ describe("getSchedule", () => {
       // It's a collective availability, so both user 101 and 102 are considered for timeslots
       expect(scheduleForTeamEventOnADayWithOneBookingForEachUser).toHaveTimeSlots(
         [
-          //`04:00:00.000Z`, - Blocked with User 101
-          `04:15:00.000Z`,
-          //`05:00:00.000Z`, - Blocked with User 102 in event 2
-          `05:45:00.000Z`,
-          `06:30:00.000Z`,
-          `07:15:00.000Z`,
-          `08:00:00.000Z`,
-          `08:45:00.000Z`,
-          `09:30:00.000Z`,
-          `10:15:00.000Z`,
-          `11:00:00.000Z`,
-          `11:45:00.000Z`,
+          // Fork behaviour: Cal.com bookings never block slots, only connected calendars do.
+          "04:00:00.000Z",
+          "04:45:00.000Z",
+          "05:30:00.000Z",
+          "06:15:00.000Z",
+          "07:00:00.000Z",
+          "07:45:00.000Z",
+          "08:30:00.000Z",
+          "09:15:00.000Z",
+          "10:00:00.000Z",
+          "10:45:00.000Z",
+          "11:30:00.000Z",
         ],
         { dateString: plus2DateString }
       );
@@ -3257,16 +3260,18 @@ describe("getSchedule", () => {
       // A user with blocked time in another event, still affects Team Event availability
       expect(scheduleForTeamEventOnADayWithOneBookingForEachUserButOnDifferentTimeslots).toHaveTimeSlots(
         [
-          `04:15:00.000Z`,
-          `05:45:00.000Z`,
-          `06:30:00.000Z`,
-          `07:15:00.000Z`,
-          `08:00:00.000Z`,
-          `08:45:00.000Z`,
-          `09:30:00.000Z`,
-          `10:15:00.000Z`,
-          `11:00:00.000Z`,
-          `11:45:00.000Z`,
+          // Fork behaviour: Cal.com bookings never block slots, only connected calendars do.
+          "04:00:00.000Z",
+          "04:45:00.000Z",
+          "05:30:00.000Z",
+          "06:15:00.000Z",
+          "07:00:00.000Z",
+          "07:45:00.000Z",
+          "08:30:00.000Z",
+          "09:15:00.000Z",
+          "10:00:00.000Z",
+          "10:45:00.000Z",
+          "11:30:00.000Z",
         ],
         { dateString: plus2DateString }
       );
@@ -3286,18 +3291,18 @@ describe("getSchedule", () => {
       // A user with blocked time in another event, still affects Team Event availability
       expect(scheduleForTeamEventOnADayWithOneBookingForEachUserOnSameTimeSlot).toHaveTimeSlots(
         [
-          //`04:00:00.000Z`, // - Blocked with User 101 as well as User 102, so not available in Round Robin
-          `04:15:00.000Z`,
-          `05:00:00.000Z`,
-          `05:45:00.000Z`,
-          `06:30:00.000Z`,
-          `07:15:00.000Z`,
-          `08:00:00.000Z`,
-          `08:45:00.000Z`,
-          `09:30:00.000Z`,
-          `10:15:00.000Z`,
-          `11:00:00.000Z`,
-          `11:45:00.000Z`,
+          // Fork behaviour: Cal.com bookings never block slots, only connected calendars do.
+          "04:00:00.000Z",
+          "04:45:00.000Z",
+          "05:30:00.000Z",
+          "06:15:00.000Z",
+          "07:00:00.000Z",
+          "07:45:00.000Z",
+          "08:30:00.000Z",
+          "09:15:00.000Z",
+          "10:00:00.000Z",
+          "10:45:00.000Z",
+          "11:30:00.000Z",
         ],
         { dateString: plus3DateString }
       );

@@ -108,12 +108,12 @@ export class BusyTimesService {
     // Will keep support for retrieving a user's bookings if the caller does not already supply them.
     // This function is called from multiple places but we aren't refactoring all of them at this moment
     // to avoid potential side effects.
-    let bookings = params.currentBookings;
+    const suppliedBookings = params.currentBookings ?? [];
 
-    // explicit bypass: treat as no bookings
-    logger.debug("Bypassing Cal.com internal bookings when computing busy times");
-    if(!bookings)
-      bookings = [];
+    // Fork behaviour: Cal.com internal bookings never count as busy, so a booking on one event type
+    // (space) does not block the others; only the connected calendars do. Callers such as the slots
+    // service always supply currentBookings, so they must be ignored here, not only defaulted.
+    const bookings: typeof suppliedBookings = [];
     const bookingSeatCountMap: { [x: string]: number } = {};
     const busyTimes = bookings.reduce((aggregate: EventBusyDetails[], booking) => {
       const { id, startTime, endTime, eventType, title, ...rest } = booking;
@@ -227,7 +227,7 @@ export class BusyTimesService {
         });
 
         if (rescheduleUid) {
-          const originalRescheduleBooking = bookings.find((booking) => booking.uid === rescheduleUid);
+          const originalRescheduleBooking = suppliedBookings.find((booking) => booking.uid === rescheduleUid);
           if (originalRescheduleBooking) {
             openSeatsDateRanges.push({
               start: dayjs(originalRescheduleBooking.startTime),

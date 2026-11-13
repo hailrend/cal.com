@@ -1,16 +1,15 @@
+import type { ScenarioData } from "@calcom/testing/lib/bookingScenario/bookingScenario";
 import {
   createBookingScenario,
+  getGoogleCalendarCredential,
+  mockCalendar,
   replaceDates,
   TestData,
   Timezones,
 } from "@calcom/testing/lib/bookingScenario/bookingScenario";
-import type { ScenarioData } from "@calcom/testing/lib/bookingScenario/bookingScenario";
-
-import { describe, expect, vi, test } from "vitest";
-
 import { getAvailableSlotsService } from "@calcom/features/di/containers/AvailableSlots";
 import { PeriodType } from "@calcom/prisma/enums";
-
+import { describe, expect, test, vi } from "vitest";
 import { expectedSlotsForSchedule } from "./expects";
 import { setupAndTeardown } from "./setupAndTeardown";
 
@@ -765,20 +764,22 @@ describe("getSchedule", () => {
               ...TestData.users.example,
               id: 101,
               schedules: [TestData.schedules.IstWorkHours],
+              credentials: [getGoogleCalendarCredential()],
+              selectedCalendars: [TestData.selectedCalendars.google],
             },
           ],
-          bookings: [
-            {
-              userId: 101,
-              eventTypeId: 1,
-              status: "ACCEPTED",
-              // Fully book plus2 Date
-              startTime: `${plus1DateString}T18:30:00.000Z`,
-              endTime: `${plus2DateString}T18:30:00.000Z`,
-            },
-          ],
+          apps: [TestData.apps["google-calendar"]],
         } satisfies ScenarioData;
 
+        // Fork behaviour: Cal.com bookings never block slots, so the day is filled by a calendar event.
+        // Fully book plus2 Date
+        await mockCalendar("googlecalendar", {
+          create: {
+            uid: "MOCK_ID",
+            iCalUID: "MOCKED_GOOGLE_CALENDAR_ICS_ID",
+          },
+          busySlots: [{ start: `${plus1DateString}T18:30:00.000Z`, end: `${plus2DateString}T18:30:00.000Z` }],
+        });
         await createBookingScenario(scenarioData);
 
         const scheduleForEvent = await availableSlotsService.getAvailableSlots({
@@ -863,20 +864,22 @@ describe("getSchedule", () => {
               ...TestData.users.example,
               id: 101,
               schedules: [TestData.schedules.IstWorkHours],
+              credentials: [getGoogleCalendarCredential()],
+              selectedCalendars: [TestData.selectedCalendars.google],
             },
           ],
-          bookings: [
-            {
-              userId: 101,
-              eventTypeId: 1,
-              status: "ACCEPTED",
-              // Fully book plus2 Date
-              startTime: `${plus1DateString}T18:30:00.000Z`,
-              endTime: `${plus2DateString}T18:30:00.000Z`,
-            },
-          ],
+          apps: [TestData.apps["google-calendar"]],
         } satisfies ScenarioData;
 
+        // Fork behaviour: Cal.com bookings never block slots, so the day is filled by a calendar event.
+        // Fully book plus2 Date
+        await mockCalendar("googlecalendar", {
+          create: {
+            uid: "MOCK_ID",
+            iCalUID: "MOCKED_GOOGLE_CALENDAR_ICS_ID",
+          },
+          busySlots: [{ start: `${plus1DateString}T18:30:00.000Z`, end: `${plus2DateString}T18:30:00.000Z` }],
+        });
         await createBookingScenario(scenarioData);
 
         const scheduleForEvent = await availableSlotsService.getAvailableSlots({
@@ -964,20 +967,22 @@ describe("getSchedule", () => {
               ...TestData.users.example,
               id: 101,
               schedules: [TestData.schedules.IstWorkHours],
+              credentials: [getGoogleCalendarCredential()],
+              selectedCalendars: [TestData.selectedCalendars.google],
             },
           ],
-          bookings: [
-            {
-              userId: 101,
-              eventTypeId: 1,
-              status: "ACCEPTED",
-              // Fully book plus2 Date
-              startTime: `${plus1DateString}T18:30:00.000Z`,
-              endTime: `${plus2DateString}T18:30:00.000Z`,
-            },
-          ],
+          apps: [TestData.apps["google-calendar"]],
         } satisfies ScenarioData;
 
+        // Fork behaviour: Cal.com bookings never block slots, so the day is filled by a calendar event.
+        // Fully book plus2 Date
+        await mockCalendar("googlecalendar", {
+          create: {
+            uid: "MOCK_ID",
+            iCalUID: "MOCKED_GOOGLE_CALENDAR_ICS_ID",
+          },
+          busySlots: [{ start: `${plus1DateString}T18:30:00.000Z`, end: `${plus2DateString}T18:30:00.000Z` }],
+        });
         await createBookingScenario(scenarioData);
 
         const scheduleForEvent = await availableSlotsService.getAvailableSlots({
@@ -1072,20 +1077,22 @@ describe("getSchedule", () => {
               ...TestData.users.example,
               id: 101,
               schedules: [TestData.schedules.IstWorkHours],
+              credentials: [getGoogleCalendarCredential()],
+              selectedCalendars: [TestData.selectedCalendars.google],
             },
           ],
-          bookings: [
-            {
-              userId: 101,
-              eventTypeId: 1,
-              status: "ACCEPTED",
-              // Fully book plus3 Date
-              startTime: `${plus2DateString}T18:30:00.000Z`,
-              endTime: `${plus3DateString}T18:30:00.000Z`,
-            },
-          ],
+          apps: [TestData.apps["google-calendar"]],
         } satisfies ScenarioData;
 
+        // Fork behaviour: Cal.com bookings never block slots, so the day is filled by a calendar event.
+        // Fully book plus3 Date
+        await mockCalendar("googlecalendar", {
+          create: {
+            uid: "MOCK_ID",
+            iCalUID: "MOCKED_GOOGLE_CALENDAR_ICS_ID",
+          },
+          busySlots: [{ start: `${plus2DateString}T18:30:00.000Z`, end: `${plus3DateString}T18:30:00.000Z` }],
+        });
         await createBookingScenario(scenarioData);
 
         const scheduleForEvent = await availableSlotsService.getAvailableSlots({
@@ -1192,20 +1199,24 @@ describe("getSchedule", () => {
                 ...TestData.users.example,
                 id: 101,
                 schedules: [TestData.schedules.IstWorkHours],
+                credentials: [getGoogleCalendarCredential()],
+                selectedCalendars: [TestData.selectedCalendars.google],
               },
             ],
-            bookings: [
-              {
-                userId: 101,
-                eventTypeId: 1,
-                status: "ACCEPTED",
-                // Fully book plus2 Date
-                startTime: `${plus1DateString}T18:30:00.000Z`,
-                endTime: `${plus2DateString}T18:30:00.000Z`,
-              },
-            ],
+            apps: [TestData.apps["google-calendar"]],
           } satisfies ScenarioData;
 
+          // Fork behaviour: Cal.com bookings never block slots, so the day is filled by a calendar event.
+          // Fully book plus2 Date
+          await mockCalendar("googlecalendar", {
+            create: {
+              uid: "MOCK_ID",
+              iCalUID: "MOCKED_GOOGLE_CALENDAR_ICS_ID",
+            },
+            busySlots: [
+              { start: `${plus1DateString}T18:30:00.000Z`, end: `${plus2DateString}T18:30:00.000Z` },
+            ],
+          });
           await createBookingScenario(scenarioData);
 
           const scheduleForEvent = await availableSlotsService.getAvailableSlots({
@@ -1289,20 +1300,24 @@ describe("getSchedule", () => {
                 ...TestData.users.example,
                 id: 101,
                 schedules: [TestData.schedules.IstWorkHours],
+                credentials: [getGoogleCalendarCredential()],
+                selectedCalendars: [TestData.selectedCalendars.google],
               },
             ],
-            bookings: [
-              {
-                userId: 101,
-                eventTypeId: 1,
-                status: "ACCEPTED",
-                // Fully book plus2 Date
-                startTime: `${plus1DateString}T18:30:00.000Z`,
-                endTime: `${plus2DateString}T18:30:00.000Z`,
-              },
-            ],
+            apps: [TestData.apps["google-calendar"]],
           } satisfies ScenarioData;
 
+          // Fork behaviour: Cal.com bookings never block slots, so the day is filled by a calendar event.
+          // Fully book plus2 Date
+          await mockCalendar("googlecalendar", {
+            create: {
+              uid: "MOCK_ID",
+              iCalUID: "MOCKED_GOOGLE_CALENDAR_ICS_ID",
+            },
+            busySlots: [
+              { start: `${plus1DateString}T18:30:00.000Z`, end: `${plus2DateString}T18:30:00.000Z` },
+            ],
+          });
           await createBookingScenario(scenarioData);
 
           const scheduleForEvent = await availableSlotsService.getAvailableSlots({
@@ -1398,20 +1413,22 @@ describe("getSchedule", () => {
               ...TestData.users.example,
               id: 101,
               schedules: [TestData.schedules.IstWorkHoursNoWeekends],
+              credentials: [getGoogleCalendarCredential()],
+              selectedCalendars: [TestData.selectedCalendars.google],
             },
           ],
-          bookings: [
-            {
-              userId: 101,
-              eventTypeId: 1,
-              status: "ACCEPTED",
-              // Fully book plus3 Date
-              startTime: `${plus2DateString}T18:30:00.000Z`,
-              endTime: `${plus3DateString}T18:30:00.000Z`,
-            },
-          ],
+          apps: [TestData.apps["google-calendar"]],
         } satisfies ScenarioData;
 
+        // Fork behaviour: Cal.com bookings never block slots, so the day is filled by a calendar event.
+        // Fully book plus3 Date
+        await mockCalendar("googlecalendar", {
+          create: {
+            uid: "MOCK_ID",
+            iCalUID: "MOCKED_GOOGLE_CALENDAR_ICS_ID",
+          },
+          busySlots: [{ start: `${plus2DateString}T18:30:00.000Z`, end: `${plus3DateString}T18:30:00.000Z` }],
+        });
         await createBookingScenario(scenarioData);
 
         const scheduleForEvent = await availableSlotsService.getAvailableSlots({
