@@ -7,7 +7,9 @@ ARG NEXT_PUBLIC_LICENSE_CONSENT=true
 ARG NEXT_PUBLIC_WEBSITE_TERMS_URL
 ARG NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL
 ARG CALCOM_TELEMETRY_DISABLED
-ARG DATABASE_URL
+# The build never connects to the database (migrations run in start.sh at container start, with the
+# runtime DATABASE_URL), so a placeholder is enough and the real URL never has to be passed in.
+ARG DATABASE_URL=postgresql://build:build@localhost:5432/calcom
 ARG NEXTAUTH_SECRET=secret
 ARG CALENDSO_ENCRYPTION_KEY=secret
 ARG MAX_OLD_SPACE_SIZE=4096
