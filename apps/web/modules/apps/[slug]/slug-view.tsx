@@ -1,24 +1,26 @@
 "use client";
 
-import Link from "next/link";
-
 import { IS_PRODUCTION } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import { showToast } from "@calcom/ui/components/toast";
-
+import App from "@components/apps/App";
 import type { AppDataProps } from "@lib/apps/[slug]/getStaticProps";
 import useRouterQuery from "@lib/hooks/useRouterQuery";
-
-import App from "@components/apps/App";
+import Link from "next/link";
+import { useEffect } from "react";
 
 function SingleAppPage(props: AppDataProps) {
   const { error, setQuery: setError } = useRouterQuery("error");
   const { t } = useLocale();
-  if (error === "account_already_linked" || error === "no_default_calendar") {
-    showToast(t(error), "error", { id: error });
-    setError(undefined);
-  }
+  // Runs after mount: during server rendering setError calls router.replace, which reads `location` and
+  // crashed the page, so the OAuth error that brought the user here was never shown.
+  useEffect(() => {
+    if (error === "account_already_linked" || error === "no_default_calendar") {
+      showToast(t(error), "error", { id: error });
+      setError(undefined);
+    }
+  }, [error, setError, t]);
   // If it's not production environment, it would be a better idea to inform that the App is disabled.
   if (props.isAppDisabled) {
     if (!IS_PRODUCTION) {

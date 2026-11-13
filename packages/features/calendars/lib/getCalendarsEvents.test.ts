@@ -1,16 +1,14 @@
 import "@calcom/testing/lib/__mocks__/prisma";
 
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-
 import { symmetricDecrypt } from "@calcom/lib/crypto";
 import logger from "@calcom/lib/logger";
 import type { SelectedCalendar } from "@calcom/prisma/client";
 import type { EventBusyDate } from "@calcom/types/Calendar";
 import type { CredentialForCalendarService, CredentialPayload } from "@calcom/types/Credential";
-
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import getCalendarsEvents, {
-  getCalendarsEventsWithTimezones,
   filterSelectedCalendarsForCredential,
+  getCalendarsEventsWithTimezones,
 } from "./getCalendarsEvents";
 
 vi.mock("@calcom/lib/crypto", () => ({
@@ -251,6 +249,62 @@ describe("getCalendarsEvents", () => {
           source: "exampleApp",
         })),
       ]);
+    });
+
+    describe("invalid credentials", () => {
+      it("rejects when an invalid credential has a calendar selected for conflict checking", async () => {
+        mockGoogleGetAvailability.mockClear();
+        const selectedCalendar: SelectedCalendar = buildSelectedCalendar({
+          credentialId: credential.id,
+          externalId: "externalId",
+          integration: "google_calendar",
+          userId: 200,
+          id: "id",
+        });
+
+        await expect(
+          getCalendarsEvents(
+            [buildRegularCredential({ ...credential, invalid: true })],
+            "2010-12-01",
+            "2010-12-04",
+            [selectedCalendar],
+            "slots"
+          )
+        ).rejects.toThrow(`Calendar credentials ${credential.id} are invalid`);
+        expect(mockGoogleGetAvailability).not.toHaveBeenCalled();
+      });
+
+      it("skips an invalid credential that has no calendar selected for conflict checking", async () => {
+        const result = await getCalendarsEvents(
+          [buildRegularCredential({ ...credential, invalid: true })],
+          "2010-12-01",
+          "2010-12-04",
+          [],
+          "slots"
+        );
+
+        expect(result).toEqual([]);
+      });
+
+      it("ignores selected calendars that belong to another credential", async () => {
+        const selectedCalendarOfOtherCredential: SelectedCalendar = buildSelectedCalendar({
+          credentialId: credential.id + 1,
+          externalId: "externalId",
+          integration: "google_calendar",
+          userId: 200,
+          id: "id",
+        });
+
+        const result = await getCalendarsEvents(
+          [buildRegularCredential({ ...credential, invalid: true })],
+          "2010-12-01",
+          "2010-12-04",
+          [selectedCalendarOfOtherCredential],
+          "slots"
+        );
+
+        expect(result).toEqual([]);
+      });
     });
 
     it("should return availability from multiple calendars", async () => {
@@ -739,7 +793,7 @@ describe("CalDAV credential leak prevention", () => {
       googleChannelResourceUri: null,
       googleChannelExpiration: null,
       delegationCredentialId: null,
-        error: null,
+      error: null,
       lastErrorAt: null,
       watchAttempts: 0,
       unwatchAttempts: 0,

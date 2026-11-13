@@ -3,6 +3,8 @@ import { getCalendar } from "@calcom/app-store/_utils/getCalendar";
 import { symmetricDecrypt } from "@calcom/lib/crypto";
 import { decryptSecret } from "@calcom/lib/crypto/keyring";
 import { isDelegationCredential } from "@calcom/lib/delegationCredential";
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
 import { getPiiFreeCredential, getPiiFreeSelectedCalendar } from "@calcom/lib/piiFreeData";
 import { safeStringify } from "@calcom/lib/safeStringify";
@@ -95,10 +97,24 @@ const getCalendarsEvents = async (
   selectedCalendars: SelectedCalendar[],
   mode: CalendarFetchMode
 ): Promise<EventBusyDate[][]> => {
-  const calendarCredentials = withCredentials
-    .filter((credential) => credential.type.endsWith("_calendar"))
-    // filter out invalid credentials - these won't work.
-    .filter((credential) => !credential.invalid);
+  const allCalendarCredentials = withCredentials.filter((credential) =>
+    credential.type.endsWith("_calendar")
+  );
+
+  // Fork behaviour: Cal.com bookings never block slots, so a calendar we cannot read would make every slot
+  // look free and allow double bookings. An invalid connection that is used for conflict checking fails the
+  // whole lookup instead, which the callers turn into "no availability" until it is reconnected.
+  const invalidCredentialIdsUsedForConflicts = allCalendarCredentials
+    .filter((credential) => credential.invalid && isUsedForConflictChecking(credential, selectedCalendars))
+    .map((credential) => credential.id);
+  if (invalidCredentialIdsUsedForConflicts.length) {
+    throw new ErrorWithCode(
+      ErrorCode.InternalServerError,
+      `Calendar credentials ${invalidCredentialIdsUsedForConflicts.join(", ")} are invalid and must be reconnected; their calendars cannot be checked for conflicts`
+    );
+  }
+
+  const calendarCredentials = allCalendarCredentials.filter((credential) => !credential.invalid);
 
   const calendarAndCredentialPairs = await Promise.all(
     calendarCredentials.map(async (credential) => {
@@ -219,6 +235,17 @@ const getCalendarsEvents = async (
 };
 
 export default getCalendarsEvents;
+
+function isUsedForConflictChecking(
+  credential: CredentialForCalendarService,
+  selectedCalendars: SelectedCalendar[]
+): boolean {
+  if (isDelegationCredential({ credentialId: credential.id })) return true;
+  return filterSelectedCalendarsForCredential(selectedCalendars, credential).some(
+    (selectedCalendar) =>
+      selectedCalendar.credentialId == null || selectedCalendar.credentialId === credential.id
+  );
+}
 
 /**
  * Extract server URL from CalDAV calendar externalId

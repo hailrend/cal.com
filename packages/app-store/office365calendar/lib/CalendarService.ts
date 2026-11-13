@@ -394,6 +394,7 @@ class Office365CalendarService implements Calendar {
       const ids = await (selectedCalendarIds.length === 0
         ? this.listCalendars().then((cals) => cals.map((e_2) => e_2.externalId).filter(Boolean) || [])
         : Promise.resolve(selectedCalendarIds));
+      if (ids.length === 0) return [];
       const requestsPromises = ids.map(async (calendarId, id) => ({
         id,
         method: "GET",
@@ -401,10 +402,15 @@ class Office365CalendarService implements Calendar {
       }));
       const requests = await Promise.all(requestsPromises);
       const response = await this.apiGraphBatchCall(requests);
-      const responseBody = await this.handleErrorJsonOffice365Calendar(response);
+      const responseBody = await this.handleErrorJsonOffice365Calendar<IBatchResponse>(response);
+      if (!response.ok) {
+        throw new Error(`Office365 calendarView batch request failed with status ${response.status}`);
+      }
       let responseBatchApi: IBatchResponse = { responses: [] };
       if (typeof responseBody === "string") {
         responseBatchApi = this.handleTextJsonResponseWithHtmlInBody(responseBody);
+      } else if (Array.isArray(responseBody?.responses)) {
+        responseBatchApi = responseBody;
       }
       let alreadySuccessResponse = [] as ISettledResponse[];
 
@@ -417,10 +423,22 @@ class Office365CalendarService implements Calendar {
       }
 
       // Recursively fetch nextLink responses
-      alreadySuccessResponse = await this.fetchResponsesWithNextLink(responseBatchApi.responses);
+      alreadySuccessResponse = (await this.fetchResponsesWithNextLink(responseBatchApi.responses)) ?? [];
 
-      return alreadySuccessResponse ? this.processBusyTimes(alreadySuccessResponse) : [];
-    } catch {
+      // A failed sub-request carries an error body instead of events; reading it as "no events" would show
+      // every slot as free, so any missing or failed calendar fails the whole availability lookup.
+      const failedStatuses = alreadySuccessResponse
+        .filter((subResponse) => subResponse.status !== 200)
+        .map((subResponse) => subResponse.status);
+      if (failedStatuses.length || alreadySuccessResponse.length < requests.length) {
+        throw new Error(
+          `Office365 calendarView failed for ${requests.length} calendars: got ${alreadySuccessResponse.length} responses, failed statuses [${failedStatuses.join(", ")}]`
+        );
+      }
+
+      return this.processBusyTimes(alreadySuccessResponse);
+    } catch (error) {
+      this.log.error("getAvailability: unable to read Office365 busy times", error);
       return Promise.reject([]);
     }
   }
