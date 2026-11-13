@@ -1,16 +1,13 @@
 import {
+  createBookingScenario,
   getDate,
   getGoogleCalendarCredential,
-  createBookingScenario,
-  Timezones,
-  TestData,
   mockCalendar,
+  TestData,
+  Timezones,
 } from "@calcom/testing/lib/bookingScenario/bookingScenario";
-
-import { describe, test } from "vitest";
-
 import { getAvailableSlotsService } from "@calcom/features/di/containers/AvailableSlots";
-
+import { describe, test } from "vitest";
 import { expect, expectedSlotsForSchedule } from "./expects";
 import { setupAndTeardown } from "./setupAndTeardown";
 
@@ -80,6 +77,17 @@ describe("getSchedule", () => {
       expect(scheduleForDayWithAGoogleCalendarBooking).toHaveTimeSlots([`04:00:00.000Z`], {
         dateString: plus2DateString,
       });
+
+      // Slots inside working hours (04:00-12:30 UTC) covered by the calendar event are returned as occupied.
+      const occupiedSlotTimes = scheduleForDayWithAGoogleCalendarBooking.slots[plus2DateString]
+        .filter((slot) => slot.busy)
+        .map((slot) => slot.time);
+      expect(occupiedSlotTimes.length).toBeGreaterThan(0);
+      expect(
+        occupiedSlotTimes.every(
+          (time) => time > `${plus2DateString}T04:00:00.000Z` && time < `${plus2DateString}T12:30:00.000Z`
+        )
+      ).toBe(true);
     });
 
     describe("useEventLevelSelectedCalendars is true", () => {

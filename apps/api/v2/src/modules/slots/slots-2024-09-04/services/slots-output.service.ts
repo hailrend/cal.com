@@ -1,7 +1,3 @@
-import { EventTypesRepository_2024_06_14 } from "@/platform/event-types/event-types_2024_06_14/event-types.repository";
-import { Injectable, BadRequestException } from "@nestjs/common";
-import { DateTime } from "luxon";
-
 import { SlotFormat } from "@calcom/platform-enums";
 import type {
   GetReservedSlotOutput_2024_09_04,
@@ -14,9 +10,15 @@ import type {
   SlotsOutput_2024_09_04,
 } from "@calcom/platform-types";
 import type { SelectedSlots } from "@calcom/prisma/client";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { DateTime } from "luxon";
+import { EventTypesRepository_2024_06_14 } from "@/platform/event-types/event-types_2024_06_14/event-types.repository";
 
 type GetAvailableSlots = {
-  slots: Record<string, { time: string; attendees?: number; bookingUid?: string; away?: boolean }[]>;
+  slots: Record<
+    string,
+    { time: string; attendees?: number; bookingUid?: string; away?: boolean; busy?: boolean }[]
+  >;
 };
 
 @Injectable()
@@ -46,7 +48,8 @@ export class SlotsOutputService_2024_09_04 {
 
     const slots: { [key: string]: (Slot_2024_09_04 | SeatedSlot_2024_09_04)[] } = {};
     for (const date in availableSlots.slots) {
-      const availableTimeSlots = availableSlots.slots[date].filter((slot) => !slot.away);
+      // `busy` slots only exist for the web Booker to show as occupied; the API returns bookable slots only.
+      const availableTimeSlots = availableSlots.slots[date].filter((slot) => !slot.away && !slot.busy);
       if (availableTimeSlots.length > 0) {
         slots[date] = availableTimeSlots.map((slot) => {
           if (!timeZone) {
@@ -116,7 +119,7 @@ export class SlotsOutputService_2024_09_04 {
     const slots = Object.entries(availableSlots.slots).reduce<
       Record<string, (RangeSlot_2024_09_04 | SeatedRangeSlot_2024_09_04)[]>
     >((acc, [date, slots]) => {
-      const availableTimeSlots = slots.filter((slot) => !slot.away);
+      const availableTimeSlots = slots.filter((slot) => !slot.away && !slot.busy);
       if (availableTimeSlots.length > 0) {
         acc[date] = availableTimeSlots.map((slot) => {
           if (timeZone) {

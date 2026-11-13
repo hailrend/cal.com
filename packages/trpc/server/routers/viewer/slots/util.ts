@@ -41,6 +41,7 @@ import type { EventTypeRepository } from "@calcom/features/eventtypes/repositori
 import type { PrismaOOORepository } from "@calcom/features/ooo/repositories/PrismaOOORepository";
 import type { IRedisService } from "@calcom/features/redis/IRedisService";
 import { buildDateRanges } from "@calcom/features/schedules/lib/date-ranges";
+import { getBusySlotTimes } from "@calcom/features/schedules/lib/getBusySlotTimes";
 import getSlots from "@calcom/features/schedules/lib/slots";
 import type { ScheduleRepository } from "@calcom/features/schedules/repositories/ScheduleRepository";
 import type { ISelectedSlotRepository } from "@calcom/features/selectedSlots/repositories/ISelectedSlotRepository";
@@ -569,7 +570,10 @@ export class AvailableSlotsService {
 
             const selectedDuration = (duration || eventType.length) ?? 0;
 
-            const { title: durationTitle, source: durationSource } = LimitSources.eventDurationLimit({ limit, unit });
+            const { title: durationTitle, source: durationSource } = LimitSources.eventDurationLimit({
+              limit,
+              unit,
+            });
 
             if (selectedDuration > limit) {
               limitManager.addBusyTime({
@@ -830,7 +834,16 @@ export class AvailableSlotsService {
     /* We get all users working hours and busy slots */
     const allUsersAvailability = premappedUsersAvailability.map(
       (
-        { busy, dateRanges, oooExcludedDateRanges, currentSeats: _currentSeats, timeZone, datesOutOfOffice },
+        {
+          busy,
+          dateRanges,
+          oooExcludedDateRanges,
+          dateRangesBeforeBusyTimes,
+          oooExcludedDateRangesBeforeBusyTimes,
+          currentSeats: _currentSeats,
+          timeZone,
+          datesOutOfOffice,
+        },
         index
       ) => {
         const currentUser = users[index];
@@ -839,6 +852,8 @@ export class AvailableSlotsService {
           timeZone,
           dateRanges,
           oooExcludedDateRanges,
+          dateRangesBeforeBusyTimes: dateRangesBeforeBusyTimes ?? [],
+          oooExcludedDateRangesBeforeBusyTimes: oooExcludedDateRangesBeforeBusyTimes ?? [],
           busy,
           user: currentUser,
           datesOutOfOffice,
@@ -1088,17 +1103,39 @@ export class AvailableSlotsService {
       }
     }
 
-    const timeSlots = getSlots({
+    const slotGridOptions = {
       inviteeDate: startTime,
       eventLength: input.duration || eventType.length,
       offsetStart: eventType.offsetStart,
-      dateRanges: aggregatedAvailability,
       minimumBookingNotice: eventType.minimumBookingNotice,
       frequency: eventType.slotInterval || input.duration || eventType.length,
       datesOutOfOffice: allUsersAvailability[0]?.datesOutOfOffice,
       showOptimizedSlots: eventType.showOptimizedSlots,
       datesOutOfOfficeTimeZone: allUsersAvailability[0]?.timeZone,
-    });
+    };
+
+    const timeSlots = getSlots({ ...slotGridOptions, dateRanges: aggregatedAvailability });
+
+    // Fork behaviour: slots inside working hours that are taken are returned flagged `busy` so the Booker
+    // shows them as occupied instead of hiding them. The grid is rebuilt on working hours alone and every
+    // slot that no longer fits in what is still available is busy.
+    const busySlotTimes = eventType.onlyShowFirstAvailableSlot
+      ? []
+      : getBusySlotTimes({
+          candidateSlots: getSlots({
+            ...slotGridOptions,
+            dateRanges: getAggregatedAvailability(
+              allUsersAvailability.map((userAvailability) => ({
+                ...userAvailability,
+                dateRanges: userAvailability.dateRangesBeforeBusyTimes,
+                oooExcludedDateRanges: userAvailability.oooExcludedDateRangesBeforeBusyTimes,
+              })),
+              eventType.schedulingType
+            ),
+          }),
+          availableDateRanges: aggregatedAvailability,
+          eventLength: slotGridOptions.eventLength,
+        });
 
     let availableTimeSlots: typeof timeSlots = [];
     const bookerClientUid = ctx?.req?.cookies?.uid;
@@ -1213,6 +1250,7 @@ export class AvailableSlotsService {
         return r;
       }, []);
 
+      const slotsBeforeReservations = availableTimeSlots;
       availableTimeSlots = availableTimeSlots
         .map((slot) => {
           if (
@@ -1241,6 +1279,14 @@ export class AvailableSlotsService {
             return !!item;
           }
         );
+
+      if (!eventType.onlyShowFirstAvailableSlot) {
+        const stillAvailableTimes = new Set(availableTimeSlots.map((slot) => slot.time.valueOf()));
+        for (const slot of slotsBeforeReservations) {
+          const time = slot.time.valueOf();
+          if (!stillAvailableTimes.has(time)) busySlotTimes.push(time);
+        }
+      }
     }
 
     // fr-CA uses YYYY-MM-DD
@@ -1428,8 +1474,54 @@ export class AvailableSlotsService {
       : null;
 
     return {
-      slots: filteredSlotsMappedToDate,
+      slots: this.addBusySlots({
+        slotsMappedToDate: filteredSlotsMappedToDate,
+        busySlotTimes,
+        formatter,
+      }),
       ...troubleshooterData,
     };
+  }
+
+  /**
+   * Busy slots are only added to days that still have a bookable slot, so every consumer that reads the
+   * day keys (date picker, period limits, no-slots notification) keeps seeing bookable days only.
+   */
+  private addBusySlots({
+    slotsMappedToDate,
+    busySlotTimes,
+    formatter,
+  }: {
+    slotsMappedToDate: IGetAvailableSlots["slots"];
+    busySlotTimes: number[];
+    formatter: Intl.DateTimeFormat;
+  }): IGetAvailableSlots["slots"] {
+    if (!busySlotTimes.length) return slotsMappedToDate;
+
+    const busySlotsByDate = new Map<string, { time: string; busy: true }[]>();
+    for (const busySlotTime of Array.from(new Set(busySlotTimes))) {
+      const date = new Date(busySlotTime);
+      const dateString = formatter.format(date);
+      if (!slotsMappedToDate[dateString]) continue;
+      const busySlotsForDate = busySlotsByDate.get(dateString) ?? [];
+      busySlotsForDate.push({ time: date.toISOString(), busy: true });
+      busySlotsByDate.set(dateString, busySlotsForDate);
+    }
+
+    const slotsWithBusy: IGetAvailableSlots["slots"] = Object.create(null);
+    for (const [dateString, slots] of Object.entries(slotsMappedToDate)) {
+      const busySlotsForDate = busySlotsByDate.get(dateString);
+      if (!busySlotsForDate) {
+        slotsWithBusy[dateString] = slots;
+        continue;
+      }
+      const bookableTimes = new Set(slots.map((slot) => slot.time));
+      slotsWithBusy[dateString] = [
+        ...slots,
+        ...busySlotsForDate.filter((busySlot) => !bookableTimes.has(busySlot.time)),
+        // Both lists hold UTC ISO strings, which sort chronologically as plain strings.
+      ].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+    }
+    return slotsWithBusy;
   }
 }

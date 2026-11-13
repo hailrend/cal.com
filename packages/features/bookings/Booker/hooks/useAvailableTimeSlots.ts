@@ -1,8 +1,7 @@
-import { useMemo } from "react";
-
 import dayjs from "@calcom/dayjs";
-import type { CalendarAvailableTimeslots } from "@calcom/features/calendars/weeklyview/types/state";
 import type { IFromUser, IToUser } from "@calcom/features/availability/lib/getUserAvailability";
+import type { CalendarAvailableTimeslots } from "@calcom/features/calendars/weeklyview/types/state";
+import { useMemo } from "react";
 
 export interface IGetAvailableSlots {
   slots: Record<
@@ -17,6 +16,8 @@ export interface IGetAvailableSlots {
       reason?: string | undefined;
       emoji?: string | undefined;
       showNotePublicly?: boolean | undefined;
+      /** Inside working hours but already taken: shown as occupied, never bookable. */
+      busy?: boolean | undefined;
     }[]
   >;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,14 +35,16 @@ export const useAvailableTimeSlots = ({ schedule, eventDuration }: UseAvailableT
     if (!schedule || !schedule.slots) return availableTimeslots;
 
     for (const day in schedule.slots) {
-      availableTimeslots[day] = schedule.slots[day].map((slot) => {
-        const { time, ...rest } = slot;
-        return {
-          start: dayjs(time).toDate(),
-          end: dayjs(time).add(eventDuration, "minutes").toDate(),
-          ...rest,
-        };
-      });
+      availableTimeslots[day] = schedule.slots[day]
+        .filter((slot) => !slot.busy)
+        .map((slot) => {
+          const { time, ...rest } = slot;
+          return {
+            start: dayjs(time).toDate(),
+            end: dayjs(time).add(eventDuration, "minutes").toDate(),
+            ...rest,
+          };
+        });
     }
 
     return availableTimeslots;

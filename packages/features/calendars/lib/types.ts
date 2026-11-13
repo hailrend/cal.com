@@ -9,6 +9,8 @@ export type SlotInfo = {
   reason?: string;
   emoji?: string;
   showNotePublicly?: boolean;
+  /** Inside working hours but already taken: shown as occupied, never bookable. */
+  busy?: boolean;
 };
 
 export type Slots = Record<string, SlotInfo[]>;

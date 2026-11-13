@@ -181,6 +181,16 @@ export type GetUserAvailabilityResult = {
     start: dayjs.Dayjs;
     end: dayjs.Dayjs;
   }[];
+  // Working hours before busy times are subtracted: lets the slots service tell "busy" apart from
+  // "outside working hours" so the Booker can show occupied slots instead of hiding them.
+  dateRangesBeforeBusyTimes?: {
+    start: dayjs.Dayjs;
+    end: dayjs.Dayjs;
+  }[];
+  oooExcludedDateRangesBeforeBusyTimes?: {
+    start: dayjs.Dayjs;
+    end: dayjs.Dayjs;
+  }[];
   workingHours: WorkingHoursWithUserId[];
   dateOverrides: TimeRange[];
   currentSeats:
@@ -653,6 +663,8 @@ export class UserAvailabilityService {
       timeZone: finalTimezone,
       dateRanges: dateRangesInWhichUserIsAvailable,
       oooExcludedDateRanges: dateRangesInWhichUserIsAvailableWithoutOOO,
+      dateRangesBeforeBusyTimes: dateRanges,
+      oooExcludedDateRangesBeforeBusyTimes: oooExcludedDateRanges,
       workingHours,
       dateOverrides,
       currentSeats,

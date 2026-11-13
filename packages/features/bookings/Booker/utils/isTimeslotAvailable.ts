@@ -1,5 +1,4 @@
 import dayjs from "@calcom/dayjs";
-
 import type { QuickAvailabilityCheck } from "../types";
 import { isSlotEquivalent, isValidISOFormat } from "./isSlotEquivalent";
 
@@ -10,7 +9,7 @@ type DateInBookerTimeZone = string;
 
 // Format is YYYY-MM-DDTHH:mm:ssZ
 type SlotInIsoFormat = string;
-type SlotsInIso = { time: SlotInIsoFormat }[];
+type SlotsInIso = { time: SlotInIsoFormat; busy?: boolean }[];
 type ScheduleData = {
   /**
    * `slots` is a map of date in Booker's timezone to an array of time slots in ISO format
@@ -24,7 +23,7 @@ function _isSlotPresent(slotsInIsoForDate: Maybe<SlotsInIso>, slotToCheckInIso: 
   if (!slotsInIsoForDate) return false;
   // Check if the exact time slot exists in the available slots
   return slotsInIsoForDate.some((slot) => {
-    return isSlotEquivalent({ slotTimeInIso: slot.time, slotToCheckInIso });
+    return !slot.busy && isSlotEquivalent({ slotTimeInIso: slot.time, slotToCheckInIso });
   });
 }
 

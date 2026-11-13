@@ -1738,18 +1738,22 @@ describe("getSchedule", () => {
 
       let availableSlotsInTz: dayjs.Dayjs[] = [];
       for (const date in thisUserAvailabilityBookingLimitOne.slots) {
-        thisUserAvailabilityBookingLimitOne.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        thisUserAvailabilityBookingLimitOne.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0); // 1 booking per day as limit
 
       availableSlotsInTz = [];
       for (const date in thisUserAvailabilityBookingLimitTwo.slots) {
-        thisUserAvailabilityBookingLimitTwo.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        thisUserAvailabilityBookingLimitTwo.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(23); // 2 booking per day as limit, only one booking on that
     });
@@ -1866,18 +1870,22 @@ describe("getSchedule", () => {
 
       let availableSlotsInTz: dayjs.Dayjs[] = [];
       for (const date in thisUserAvailabilityDurationLimitReached.slots) {
-        thisUserAvailabilityDurationLimitReached.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        thisUserAvailabilityDurationLimitReached.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0);
 
       availableSlotsInTz = [];
       for (const date in thisUserAvailabilityDurationLimitNotReached.slots) {
-        thisUserAvailabilityDurationLimitNotReached.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        thisUserAvailabilityDurationLimitNotReached.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(
@@ -1964,9 +1972,11 @@ describe("getSchedule", () => {
 
       const availableSlotsInTz: dayjs.Dayjs[] = [];
       for (const date in thisUserAvailabilityDurationLimit.slots) {
-        thisUserAvailabilityDurationLimit.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        thisUserAvailabilityDurationLimit.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0);
@@ -2060,9 +2070,11 @@ describe("getSchedule", () => {
 
       const availableSlotsInTz: dayjs.Dayjs[] = [];
       for (const date in weeklyAvailability.slots) {
-        weeklyAvailability.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        weeklyAvailability.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(
@@ -2190,9 +2202,11 @@ describe("getSchedule", () => {
 
       const availableSlotsInTz: dayjs.Dayjs[] = [];
       for (const date in availabilityEventTypeOne.slots) {
-        availabilityEventTypeOne.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        availabilityEventTypeOne.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0);
@@ -2211,9 +2225,11 @@ describe("getSchedule", () => {
 
       const availableSlotsInTz2: dayjs.Dayjs[] = [];
       for (const date in availabilityEventTypeTwo.slots) {
-        availabilityEventTypeTwo.slots[date].forEach((timeObj) => {
-          availableSlotsInTz2.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        availabilityEventTypeTwo.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz2.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz2.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0);
@@ -2232,9 +2248,11 @@ describe("getSchedule", () => {
 
       const availableSlotsInTz3: dayjs.Dayjs[] = [];
       for (const date in availabilityUserEventType.slots) {
-        availabilityUserEventType.slots[date].forEach((timeObj) => {
-          availableSlotsInTz3.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        availabilityUserEventType.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz3.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(
@@ -2360,18 +2378,22 @@ describe("getSchedule", () => {
 
       let availableSlotsInTz: dayjs.Dayjs[] = [];
       for (const date in eventType1Availability.slots) {
-        eventType1Availability.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        eventType1Availability.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0);
 
       availableSlotsInTz = [];
       for (const date in eventType2Availability.slots) {
-        eventType2Availability.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        eventType2Availability.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(
@@ -2408,9 +2430,11 @@ describe("getSchedule", () => {
 
       availableSlotsInTz = [];
       for (const date in eventType2AvailabilityUpdated.slots) {
-        eventType2AvailabilityUpdated.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        eventType2AvailabilityUpdated.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0);
@@ -2489,9 +2513,11 @@ describe("getSchedule", () => {
 
       const availableSlotsInTz: dayjs.Dayjs[] = [];
       for (const date in thisUserAvailabilityBookingLimit.slots) {
-        thisUserAvailabilityBookingLimit.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        thisUserAvailabilityBookingLimit.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0); // 1 booking per day as limit
@@ -2604,9 +2630,11 @@ describe("getSchedule", () => {
 
       const availableSlotsInTz: dayjs.Dayjs[] = [];
       for (const date in availabilityEventTypeOne.slots) {
-        availabilityEventTypeOne.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        availabilityEventTypeOne.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0); // 1 booking per day as limit
@@ -2624,9 +2652,11 @@ describe("getSchedule", () => {
       });
 
       for (const date in availabilityEventTypeTwo.slots) {
-        availabilityEventTypeTwo.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        availabilityEventTypeTwo.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0); // 1 booking per day as limit
@@ -2644,9 +2674,11 @@ describe("getSchedule", () => {
       });
 
       for (const date in availabilityUserEventType.slots) {
-        availabilityUserEventType.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        availabilityUserEventType.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(23);
@@ -2729,9 +2761,11 @@ describe("getSchedule", () => {
 
       const availableSlotsInTz: dayjs.Dayjs[] = [];
       for (const date in thisUserAvailabilityBookingLimit.slots) {
-        thisUserAvailabilityBookingLimit.slots[date].forEach((timeObj) => {
-          availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
-        });
+        thisUserAvailabilityBookingLimit.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInTz.push(dayjs(timeObj.time).tz(Timezones["+6:00"]));
+          });
       }
 
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0); // 1 booking per day as limit
@@ -2824,9 +2858,11 @@ describe("getSchedule", () => {
 
       const availableSlotsInScheduleTz: dayjs.Dayjs[] = [];
       for (const date in availability.slots) {
-        availability.slots[date].forEach((timeObj) => {
-          availableSlotsInScheduleTz.push(dayjs(timeObj.time).tz(Timezones["+5:30"]));
-        });
+        availability.slots[date]
+          .filter((slot) => !slot.busy)
+          .forEach((timeObj) => {
+            availableSlotsInScheduleTz.push(dayjs(timeObj.time).tz(Timezones["+5:30"]));
+          });
       }
 
       expect(
@@ -3562,7 +3598,7 @@ describe("getSchedule", () => {
       );
     });
 
-    test("Reschedule: should show timeslots as per routedTeamMemberIds(instead of same host) even if rescheduleWithSameRoundRobinHost is true but it is a rerouting scenario",async () => {
+    test("Reschedule: should show timeslots as per routedTeamMemberIds(instead of same host) even if rescheduleWithSameRoundRobinHost is true but it is a rerouting scenario", async () => {
       vi.setSystemTime("2024-05-21T00:00:13Z");
 
       const plus1DateString = "2024-05-22";

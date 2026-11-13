@@ -1,7 +1,6 @@
+import type { Slot } from "@calcom/atoms/booker/types";
 import { diff } from "jest-diff";
 import { expect } from "vitest";
-
-import type { Slot } from "@calcom/atoms/booker/types";
 
 export const expectedSlotsForSchedule = {
   IstWorkHours: {
@@ -73,7 +72,7 @@ declare global {
 
 expect.extend({
   toHaveTimeSlots(
-    schedule: { slots: Record<string, Slot[]> },
+    schedule: { slots: Record<string, (Slot & { busy?: boolean })[]> },
     expectedSlots: string[],
     { dateString, doExactMatch }: { dateString: string; doExactMatch: boolean }
   ) {
@@ -88,6 +87,8 @@ expect.extend({
 
     if (
       !schedule.slots[`${dateString}`]
+        // Occupied slots are returned only to be displayed; the expectations are about bookable slots.
+        .filter((slot) => !slot.busy)
         .map((slot) => slot.time)
         .every((actualSlotTime, index) => {
           const expectedSlotTime = expectedSlotHasFullTimestamp

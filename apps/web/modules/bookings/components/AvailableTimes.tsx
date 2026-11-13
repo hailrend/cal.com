@@ -159,15 +159,18 @@ const SlotItem = ({
             loadingStates?.creatingRecurringBooking ||
             isVerificationCodeSending ||
             (skipConfirmStep && !!shouldRenderCaptcha && !watchedCfToken) ||
-            isTimeslotUnavailable
+            isTimeslotUnavailable ||
+            !!slot.busy
           }
-          data-testid="time"
-          data-disabled={bookingFull}
+          // Occupied slots get their own test id so "first available time" selectors keep skipping them.
+          data-testid={slot.busy ? "time-busy" : "time"}
+          data-disabled={bookingFull || !!slot.busy}
           data-time={slot.time}
           onClick={onButtonClick}
           className={classNames(
             `hover:border-brand-default min-h-9 mb-2 flex h-auto w-full grow flex-col justify-center py-2`,
             selectedSlots?.includes(slot.time) && "border-brand-default",
+            slot.busy && "cursor-not-allowed opacity-60",
             `${customClassNames}`
           )}
           color="secondary">
@@ -180,10 +183,13 @@ const SlotItem = ({
                 )}
               />
             )}
-            {computedDateWithUsersTimezone.format(timeFormat)}
+            <span className={classNames(slot.busy && "line-through")}>
+              {computedDateWithUsersTimezone.format(timeFormat)}
+            </span>
           </div>
-          {bookingFull && <p className="text-sm">{t("booking_full")}</p>}
-          {hasTimeSlots && !bookingFull && (
+          {slot.busy && <p className="text-sm">{t("timeslot_unavailable_short")}</p>}
+          {bookingFull && !slot.busy && <p className="text-sm">{t("booking_full")}</p>}
+          {hasTimeSlots && !bookingFull && !slot.busy && (
             <p className="flex items-center text-sm">
               <span
                 className={classNames(colorClass, "mr-1 inline-block h-2 w-2 rounded-full")}
